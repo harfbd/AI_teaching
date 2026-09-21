@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#123e50" />
+    <meta name="description" content="麥寮高中互動式 3D 校園導覽：探索校舍、運動場與從校門出發的示意路線。" />
+    <title>麥寮高中｜3D 校園導覽</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23123e50'/%3E%3Cpath d='M11 43 32 18l21 25-21 12z' fill='%23f5b260'/%3E%3Cpath d='M11 43v8l21 9v-5zm21 12 21-12v8L32 60z' fill='%23e99149'/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="./vendor/maplibre-gl.css" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" id="sidebar" aria-label="校園導覽選單">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></div>
+          <div>
+            <p class="eyebrow">YUNLIN · MAILIAO</p>
+            <h1>麥寮高中<span>校園導覽</span></h1>
+          </div>
+        </div>
+
+        <div class="intro">
+          <div class="edition"><span class="edition-dot"></span>依 115 學年度校舍配置圖繪製</div>
+          <p>點選地圖或下方地點，即可查看位置與校門出發的步行路線。</p>
+        </div>
+
+        <div class="route-form" aria-label="規劃校內路線">
+          <label for="start-select">從哪裡出發</label>
+          <div class="select-wrap">
+            <span class="select-icon start-icon" aria-hidden="true"></span>
+            <select id="start-select">
+              <option value="main">大門 · 中興路</option>
+              <option value="rear">後門 · 中興路</option>
+            </select>
+          </div>
+          <label for="destination-select">要去的地點</label>
+          <div class="select-wrap">
+            <span class="select-icon target-icon" aria-hidden="true"></span>
+            <select id="destination-select">
+              <option value="">請選擇目的地</option>
+            </select>
+          </div>
+          <button class="route-button" id="route-button" type="button">顯示示意路線 <span aria-hidden="true">↗</span></button>
+        </div>
+
+        <div class="places-heading">
+          <h2>校園地點</h2>
+          <span id="places-count"></span>
+        </div>
+        <div class="place-filters" role="group" aria-label="地點類別">
+          <button class="filter active" data-filter="all" type="button" aria-pressed="true">全部</button>
+          <button class="filter" data-filter="study" type="button" aria-pressed="false">校舍</button>
+          <button class="filter" data-filter="sport" type="button" aria-pressed="false">運動</button>
+          <button class="filter" data-filter="life" type="button" aria-pressed="false">生活</button>
+        </div>
+        <div class="places-list" id="places-list"></div>
+
+        <div class="sidebar-foot">
+          <button class="text-button" id="sources-button" type="button">資料來源與精度 <span aria-hidden="true">↗</span></button>
+          <p>雲林縣麥寮鄉中興路 310 號</p>
+        </div>
+      </aside>
+
+      <main class="workspace">
+        <div id="map" role="application" aria-label="麥寮高中互動式立體校園地圖"></div>
+        <div class="map-topbar">
+          <button class="mobile-menu" id="menu-button" type="button" aria-label="開啟地點清單" aria-controls="sidebar" aria-expanded="false">☰</button>
+          <div class="view-title"><strong>校園全覽</strong><span>拖曳移動 · 滾輪縮放 · 右鍵旋轉</span></div>
+          <div class="map-mode" role="group" aria-label="地圖底圖">
+            <button id="model-button" type="button" class="active" aria-pressed="true">簡圖</button>
+            <button id="satellite-button" type="button" aria-pressed="false">衛星</button>
+          </div>
+        </div>
+
+        <div class="map-tools" aria-label="地圖控制">
+          <button id="zoom-in" type="button" title="放大" aria-label="放大">＋</button>
+          <button id="zoom-out" type="button" title="縮小" aria-label="縮小">−</button>
+          <span class="tool-divider"></span>
+          <button id="tilt-button" type="button" title="切換俯視與立體" aria-label="切換俯視與立體">3D</button>
+          <button id="reset-button" type="button" title="回到校園全覽" aria-label="回到校園全覽">◎</button>
+        </div>
+
+        <div class="compass" aria-hidden="true"><span>N</span><i></i></div>
+        <div class="map-legend" aria-label="地圖圖例">
+          <span><i class="legend-study"></i>教學校舍</span>
+          <span><i class="legend-sport"></i>運動設施</span>
+          <span><i class="legend-life"></i>生活設施</span>
+        </div>
+        <div class="map-note">3D 建築量體與步行路線為示意，非即時導航</div>
+
+        <section class="detail-card" id="detail-card" aria-live="polite" hidden>
+          <button class="detail-close" id="detail-close" type="button" aria-label="關閉地點資訊">×</button>
+          <p class="detail-kicker" id="detail-kicker"></p>
+          <h2 id="detail-title"></h2>
+          <p class="detail-description" id="detail-description"></p>
+          <div class="detail-facts" id="detail-facts"></div>
+          <button id="detail-route" type="button" class="detail-route">顯示從大門出發的路線 <span aria-hidden="true">↗</span></button>
+        </section>
+
+        <div class="map-attribution">地圖資料 © OpenStreetMap 貢獻者 · 衛星影像 © Esri、Maxar 等</div>
+      </main>
+    </div>
+
+    <dialog id="sources-dialog" class="sources-dialog">
+      <div class="dialog-head"><div><p class="eyebrow">ABOUT THIS MAP</p><h2>資料來源與使用提醒</h2></div><button id="sources-close" type="button" aria-label="關閉">×</button></div>
+      <div class="source-content">
+        <p>本導覽依校方 115 學年度校舍配置圖建立建築名稱與大致位置；以公開地圖及衛星影像校對校區方位。建築外形、高度及步行動線是方便辨識的概略示意，現場仍請以校方標示為準。</p>
+        <div class="plan-preview"><img src="./assets/plan-115.png" alt="麥寮高中 115 學年度校舍配置圖預覽" loading="lazy" /><div><strong>115 學年度校舍配置圖</strong><span>校方公告 · 2026 年 8 月</span><a href="https://mljh.ylc.edu.tw/News_Content.aspx?n=54641&amp;s=388472&amp;sms=37179" target="_blank" rel="noopener">查看校方原始公告 ↗</a></div></div>
+        <ul>
+          <li><a href="https://mljh.ylc.edu.tw/cp.aspx?n=54652" target="_blank" rel="noopener">校方校園導覽圖</a>：用於核對主要棟別的相對位置。</li>
+          <li><a href="https://www.openstreetmap.org/way/263998868" target="_blank" rel="noopener">OpenStreetMap</a>：校區邊界與地理座標，資料依 ODbL 授權。</li>
+          <li><a href="https://www.google.com/maps/search/?api=1&amp;query=%E9%BA%A5%E5%AF%AE%E9%AB%98%E4%B8%AD" target="_blank" rel="noopener">Google 地圖</a>：可另開查看現場周邊與街景。</li>
+        </ul>
+        <p class="source-warning">衛星底圖來自 Esri World Imagery，拍攝時間可能不同於校舍配置圖。此網站不是校方正式發布的導覽或無障礙路線。</p>
+      </div>
+    </dialog>
+    <div class="mobile-scrim" id="mobile-scrim" hidden></div>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
